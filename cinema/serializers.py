@@ -1,4 +1,7 @@
-from django.db import transaction
+from django.db import (
+    transaction,
+    IntegrityError
+)
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
@@ -101,7 +104,7 @@ class TicketSerializer(serializers.ModelSerializer):
         Ticket.validate_seat(
             seat=attrs["seat"],
             row=attrs["row"],
-            cinema_hall=attrs["movie_session"].cinema_hall,
+            movie_session=attrs["movie_session"],
             error_to_raise=serializers.ValidationError
         )
         return data
@@ -143,15 +146,26 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = ("tickets",)
 
     def create(self, validated_data):
-        with transaction.atomic():
-            tickets_data = validated_data.pop("tickets")
-            order = Order.objects.create(**validated_data)
-            tickets_to_create = [
-                Ticket(order=order, **ticket_data)
-                for ticket_data in tickets_data
-            ]
-            Ticket.objects.bulk_create(tickets_to_create)
-            return order
+        try:
+            with transaction.atomic():
+                tickets_data = validated_data.pop("tickets")
+                order = Order.objects.create(**validated_data)
+                tickets_to_create = [
+                    Ticket(order=order, **ticket_data)
+                    for ticket_data in tickets_data
+                ]
+                Ticket.objects.bulk_create(tickets_to_create)
+                return order
+
+        except IntegrityError:
+            raise serializers.ValidationError(
+                {
+                    "tickets": [
+                        "The request contains a duplicate seat. Please choose "
+                        "different seats."
+                    ]
+                }
+            )
 
 
 class OrderListSerializer(OrderSerializer):

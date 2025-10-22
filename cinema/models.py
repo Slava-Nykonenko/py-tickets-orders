@@ -101,15 +101,16 @@ class Ticket(models.Model):
     def validate_seat(
             seat: int,
             row: int,
-            cinema_hall: CinemaHall,
+            movie_session: MovieSession,
             error_to_raise: Callable
     ) -> None | ValidationError:
+
         for ticket_attr_value, ticket_attr_name, cinema_hall_attr_name in [
             (row, "row", "rows"),
             (seat, "seat", "seats_in_row"),
         ]:
             count_attrs = getattr(
-                cinema_hall, cinema_hall_attr_name
+                movie_session.cinema_hall, cinema_hall_attr_name
             )
             if not (1 <= ticket_attr_value <= count_attrs):
                 raise error_to_raise(
@@ -124,7 +125,7 @@ class Ticket(models.Model):
         Ticket.validate_seat(
             self.seat,
             self.row,
-            self.movie_session.cinema_hall,
+            self.movie_session,
             ValidationError
         )
 
