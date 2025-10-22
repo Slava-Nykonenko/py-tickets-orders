@@ -70,7 +70,6 @@ class MovieSessionListSerializer(MovieSessionSerializer):
         source="cinema_hall.capacity", read_only=True
     )
     tickets_available = serializers.IntegerField(
-        source="tickets.available",
         read_only=True
     )
 
