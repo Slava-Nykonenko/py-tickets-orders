@@ -3,6 +3,7 @@ from django.db.models import (
     Count
 )
 from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
 
 from cinema.models import (
     Genre,
@@ -114,6 +115,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
+    permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
         queryset = self.queryset.filter(
@@ -121,7 +123,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         ).prefetch_related("tickets__movie_session__cinema_hall")
         if self.action in ("list", "retrieve"):
             queryset = queryset.prefetch_related(
-                "tickets__movie_session__movie"
+                "tickets__movie_session__movie",
             )
         return queryset
 
